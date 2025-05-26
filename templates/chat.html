@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+
+{% block title %}Chat{% endblock %}
+
+{% block content %}
+<h2 class="text-center mb-4" id="chat-title">Chat với ...</h2>
+
+<div class="row">
+    {% if role == 'admin' %}
+    <!-- Danh sách user -->
+    <div class="col-md-3">
+        <h5>Danh sách user:</h5>
+        <ul id="user-list" class="list-group">
+            {% for user in users %}
+            <li class="list-group-item user-item" data-username="{{ user[0] }}">{{ user[0] }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="col-md-9">
+    {% else %}
+    <div class="col-md-12">
+    {% endif %}
+        <div class="card shadow p-3 mb-5">
+            <div id="chat-output" class="border rounded p-3 mb-3 bg-light" style="height: 300px; overflow-y: auto;"></div>
+            <div class="input-group">
+                <input type="text" id="user-input" class="form-control" placeholder="Nhập tin nhắn...">
+                <button class="btn btn-primary" id="send-btn">Gửi</button>
+            </div>
+            <div id="error-message" class="text-danger mt-2"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+
+<script>
+    const socket = io();
+    const username = "{{ username }}";
+    const role = "{{ role }}";
+
+    let selectedUser = null;
+    let currentRoom = null;
+
+    // Gửi yêu cầu tham gia phòng
+    function joinRoom(room) {
+        if (currentRoom) {
+            socket.emit('leave', { room: currentRoom });
+        }
+        socket.emit('join', { room: room });
+        currentRoom = room;
+    }
+
+    // Khởi tạo khi là admin
+    function initAdminChat() {
+        socket.emit('join'); // Tham gia phòng admin nếu cần
+
+        const userList = document.getElementById('user-list');
+        userList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('user-item')) {
+                selectedUser = e.target.getAttribute('data-username');
+                document.getElementById('chat-output').innerHTML = '';
+                document.getElementById('error-message').textContent = '';
+
+                joinRoom('chat:' + selectedUser);
+
+                document.getElementById('chat-title').textContent = `Chat với ${selectedUser}`;
+
+                // Highlight user được chọn
+                document.querySelectorAll('.user-item').forEach(item => item.classList.remove('active'));
+                e.target.classList.add('active');
+            }
+        });
+    }
+
+    // Khởi tạo nếu là user bình thường
+    function initUserChat() {
+        const room = 'chat:' + username;
+        joinRoom(room);
+        document.getElementById('chat-title').textContent = `Chat với admin`;
+    }
+
+    // Gửi tin nhắn
+    function sendMessage() {
+        const input = document.getElementById('user-input');
+        const message = input.value.trim();
+        const chatOutput = document.getElementById('chat-output');
+
+        if (!message) return;
+
+        if (role === 'admin' && !selectedUser) {
+            document.getElementById('error-message').textContent = "Vui lòng chọn user để chat.";
+            return;
+        }
+
+        chatOutput.innerHTML += `<p><strong>Bạn:</strong> ${message}</p>`;
+        chatOutput.scrollTop = chatOutput.scrollHeight;
+
+        const payload = { message: message };
+        if (role === 'admin') payload.to_user = selectedUser;
+
+        socket.emit('send_message', payload);
+        input.value = '';
+        document.getElementById('error-message').textContent = '';
+    }
+
+    // Lắng nghe sự kiện nhận tin nhắn
+    socket.on('receive_message', data => {
+        const chatOutput = document.getElementById('chat-output');
+        chatOutput.innerHTML += `<p><strong>${data.username}:</strong> ${data.msg}</p>`;
+        chatOutput.scrollTop = chatOutput.scrollHeight;
+    });
+
+    socket.on('status', data => {
+        const chatOutput = document.getElementById('chat-output');
+        chatOutput.innerHTML += `<p><em>${data.msg}</em></p>`;
+        chatOutput.scrollTop = chatOutput.scrollHeight;
+    });
+
+    // Sự kiện nhấn nút gửi hoặc Enter
+    document.getElementById('send-btn').addEventListener('click', sendMessage);
+    document.getElementById('user-input').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') sendMessage();
+    });
+
+    // Khi rời khỏi trang
+    window.onbeforeunload = () => {
+        if (role === 'admin') {
+            socket.emit('leave', { room: 'admin' });
+            if (currentRoom) socket.emit('leave', { room: currentRoom });
+        } else {
+            socket.emit('leave', { room: 'chat:' + username });
+        }
+    };
+
+    // Khởi tạo phù hợp vai trò
+    if (role === 'admin') {
+        initAdminChat();
+    } else {
+        initUserChat();
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Gửi phản hồi{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow p-4">
+            <h3 class="mb-4 text-center">Phản hồi về hệ thống</h3>
+            <form method="POST">
+                <div class="mb-3">
+                    <label for="feedback_type" class="form-label">Loại phản hồi</label>
+                    <select class="form-select" name="feedback_type" id="feedback_type" required>
+                        <option value="">-- Chọn loại phản hồi --</option>
+                        <option value="Góp ý">Góp ý</option>
+                        <option value="Lỗi">Báo lỗi</option>
+                        <option value="Khác">Khác</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="reason" class="form-label">Nội dung phản hồi</label>
+                    <textarea class="form-control" id="reason" name="reason" rows="4" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-info w-100">Gửi phản hồi</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

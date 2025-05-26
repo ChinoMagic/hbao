@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title %}Quản lý Admin{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Trang Quản lý Admin</h1>
+
+<h3 class="mt-4">Danh sách Người dùng</h3>
+<table class="table table-bordered table-hover">
+    <thead class="table-dark">
+        <tr>
+            <th scope="col">Tên người dùng</th>
+            <th scope="col">Vai trò</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+        <tr>
+            <td>{{ user[0] }}</td>
+            <td>{{ user[1] }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h3 class="mt-5">Danh sách Phản hồi</h3>
+<table class="table table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th scope="col">Loại phản hồi</th>
+            <th scope="col">Lý do</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for feedback in feedbacks %}
+        <tr>
+            <td>{{ feedback[0] }}</td>
+            <td>{{ feedback[1] }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
